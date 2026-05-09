@@ -1,9 +1,102 @@
 "use client";
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useGame } from "@/hooks/useGame";
 import { buildCommitment } from "@/lib/constants";
+import styles from "./game.module.css";
+
+// Confetti Component for wins
+function Confetti() {
+  const [particles, setParticles] = useState<{ id: number; left: string; top: string; delay: string; duration: string; color: string }[]>([]);
+
+  useEffect(() => {
+    const colors = ['#10b981', '#34d399', '#6ee7b7', '#fcd34d', '#fbbf24'];
+    const p = Array.from({ length: 50 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${-10 - Math.random() * 20}%`,
+      delay: `${Math.random() * 0.5}s`,
+      duration: `${1 + Math.random() * 2}s`,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    setParticles(p);
+  }, []);
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      <style>{`
+        @keyframes confettiFall {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+      `}</style>
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          style={{
+            position: 'absolute',
+            left: p.left,
+            top: p.top,
+            width: '10px',
+            height: '10px',
+            backgroundColor: p.color,
+            animation: `confettiFall ${p.duration} linear ${p.delay} forwards`,
+            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Playing card component with swipe support
+function ChoiceCard({
+  choice,
+  selected,
+  disabled,
+  onSelect,
+  dragX,
+}: {
+  choice: "Split" | "Steal";
+  selected: boolean;
+  disabled: boolean;
+  onSelect: () => void;
+  dragX: number; // pixels being dragged toward this card (positive = toward)
+}) {
+  const isSplit = choice === "Split";
+  const rank = isSplit ? "A" : "K";
+  const baseRotate = isSplit ? -5 : 5;
+
+  // Extra tilt and lift when being dragged toward
+  const dragRotate = isSplit ? -dragX * 0.04 : dragX * 0.04;
+  const dragLift = Math.abs(dragX) * 0.15;
+  const dragScale = 1 + Math.abs(dragX) * 0.001;
+
+  const transform = selected
+    ? `rotate(0deg)` // Selected uses CSS !important scale
+    : `rotate(${baseRotate + dragRotate}deg) scale(${dragScale}) translateY(${-dragLift}px)`;
+
+  const cardClass = isSplit ? styles.cardSplit : styles.cardSteal;
+  const stateClass = selected ? styles.cardSelected : (dragX === 0 ? styles.cardUnselected : "");
+
+  return (
+    <button
+      onClick={onSelect}
+      disabled={disabled}
+      className={`${styles.card} ${cardClass} ${stateClass}`}
+      style={!selected ? {
+        transform,
+        transition: dragX !== 0 ? "none" : undefined,
+        willChange: "transform",
+      } : {}}
+    >
+      <div className={styles.cardRank}>{rank}</div>
+      <div className={styles.cardLabel}>{choice}</div>
+      <div className={`${styles.cardRank} ${styles.bottom}`}>{rank}</div>
+    </button>
+  );
+}
 
 function GamePageInner() {
   const { id } = useParams<{ id: string }>();
@@ -14,21 +107,39 @@ function GamePageInner() {
 
   const { game, loading, error } = useGame(BigInt(gameId));
 
-  const [sliderValue, setSliderValue] = useState(1); // 0=Split, 1=neutral, 2=Steal
-  const pendingChoice = sliderValue === 0 ? "Split" : sliderValue === 2 ? "Steal" : null;
+  const [pendingChoice, setPendingChoice] = useState<"Split" | "Steal" | null>(null);
   const [nonce] = useState(() => BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)));
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [autoResolved, setAutoResolved] = useState(false);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const autoCommitFired = useRef(false);
 
-  // Keep `now` in sync so the countdown re-renders each second
+  // Swipe state
+  const [dragX, setDragX] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const SWIPE_THRESHOLD = 50; // px to trigger selection
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    setDragX(e.touches[0].clientX - touchStartX.current);
+  };
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null) return;
+    if (dragX < -SWIPE_THRESHOLD) setPendingChoice("Split");      // swipe left → Split
+    else if (dragX > SWIPE_THRESHOLD) setPendingChoice("Steal");  // swipe right → Steal
+    setDragX(0);
+    touchStartX.current = null;
+  };
+
   useEffect(() => {
     const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Auto-resolve via backend — fires for anyone watching the page
+  // Auto-resolve via backend
   useEffect(() => {
     if (!game || autoResolved) return;
     const statusKey = Object.keys(game.status)[0];
@@ -89,12 +200,16 @@ function GamePageInner() {
     });
   }, [now, pendingChoice, game?.chat_ends_at, game?.status]); // eslint-disable-line
 
-  if (loading) return <p className="text-gray-400">Loading game…</p>;
-  if (error || !game) return <p className="text-red-400">Game not found.</p>;
+  if (loading) return (
+    <div className={styles.loader}>Loading game…</div>
+  );
+  if (error || !game) return (
+    <div className={styles.loader} style={{ color: '#ef4444' }}>Game not found.</div>
+  );
 
   const statusKey = Object.keys(game.status)[0] as string;
   const chatEndsAt = Number(game.chat_ends_at);
-  const BUFFER = 2; // seconds buffer for validator clock skew
+  const BUFFER = 2;
   const chatOver = chatEndsAt > 0 && now >= chatEndsAt + BUFFER;
   const secondsLeft = Math.max(0, chatEndsAt - now);
   const isPlayer = seat === 1 || seat === 2;
@@ -138,7 +253,7 @@ function GamePageInner() {
 
   const commitChoice = async () => {
     if (!pendingChoice) return;
-    setTxStatus("Committing choice…");
+    setTxStatus("Locking in your choice…");
     try {
       const commitment = await buildCommitment(pendingChoice, nonce);
       await api("/api/game/commit", { gameId, seat, commitment: Array.from(commitment) });
@@ -169,194 +284,201 @@ function GamePageInner() {
     const p1 = game.player1_choice ? Object.keys(game.player1_choice)[0] : null;
     const p2 = game.player2_choice ? Object.keys(game.player2_choice)[0] : null;
     if (!p1 || !p2) return null;
-    const pot = (Number(game.pot) / 1e9).toFixed(2);
-    const half = (Number(game.pot) / 2 / 1e9).toFixed(2);
-    const myWin = seat === 1
-      ? (p1 === "Steal" && p2 === "Split" ? pot : p1 === "Split" && p2 === "Split" ? half : "0")
-      : seat === 2
-      ? (p2 === "Steal" && p1 === "Split" ? pot : p1 === "Split" && p2 === "Split" ? half : "0")
-      : null;
+    const potNum = Number(game.pot) / 1e9;
+    const pot = potNum.toFixed(2);
+    const halfNum = potNum / 2;
+    const half = halfNum.toFixed(2);
+    
+    let myWinNum = 0;
+    if (seat === 1) {
+      if (p1 === "Steal" && p2 === "Split") myWinNum = potNum;
+      else if (p1 === "Split" && p2 === "Split") myWinNum = halfNum;
+    } else if (seat === 2) {
+      if (p2 === "Steal" && p1 === "Split") myWinNum = potNum;
+      else if (p1 === "Split" && p2 === "Split") myWinNum = halfNum;
+    }
+    const myWin = isPlayer ? `+${myWinNum.toFixed(2)} SOL` : null;
+
     if (p1 === "Split" && p2 === "Split") return {
-      emoji: "🤝",
-      title: "Both Split!",
-      text: `Each player takes ${half} SOL`,
-      you: myWin ? `+${myWin} SOL` : null,
-      color: "border-emerald-500/30 bg-emerald-500/10",
+      emoji: "🤝", title: "Both Split!", text: `Each player takes ${half} SOL`,
+      you: myWin, isWin: myWinNum > 0
     };
     if (p1 === "Steal" && p2 === "Steal") return {
-      emoji: "🏦",
-      title: "Both Stole.",
-      text: "No one wins — house keeps the pot",
-      you: myWin ? `+${myWin} SOL` : null,
-      color: "border-red-500/30 bg-red-500/10",
+      emoji: "🏦", title: "Both Stole.", text: "No one wins — house keeps the pot",
+      you: myWin, isWin: false
     };
     if (p1 === "Steal") return {
-      emoji: "🐍",
-      title: "Player 1 Stole!",
-      text: `Player 1 takes all ${pot} SOL`,
-      you: myWin ? `+${myWin} SOL` : null,
-      color: "border-yellow-500/30 bg-yellow-500/10",
+      emoji: "🐍", title: "Player 1 Stole!", text: `Player 1 takes all ${pot} SOL`,
+      you: myWin, isWin: seat === 1
     };
     if (p2 === "Steal") return {
-      emoji: "🐍",
-      title: "Player 2 Stole!",
-      text: `Player 2 takes all ${pot} SOL`,
-      you: myWin ? `+${myWin} SOL` : null,
-      color: "border-yellow-500/30 bg-yellow-500/10",
+      emoji: "🐍", title: "Player 2 Stole!", text: `Player 2 takes all ${pot} SOL`,
+      you: myWin, isWin: seat === 2
     };
     return null;
   })();
 
-  const thumbColor = pendingChoice === "Split" ? "#10b981" : pendingChoice === "Steal" ? "#ef4444" : "#6b7280";
-  const trackColor = pendingChoice === "Split" ? "bg-emerald-900" : pendingChoice === "Steal" ? "bg-red-900" : "bg-gray-700";
+  // Timer rendering
+  const timerDashOffset = 251 * (1 - secondsLeft / 60); // Assuming 60s max for circle animation
+  const isDanger = secondsLeft <= 10;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Game #{gameId}</h1>
-        <p className="text-gray-400 text-sm">Pot: {solPot} SOL{seat ? ` · You are Player ${seat}` : " · Spectating"}</p>
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <h1 className={styles.gameNumber}>Game #{gameId}</h1>
+        <p className={styles.potAmount}>{solPot} SOL</p>
+        <p className={styles.potLabel}>Total Pot</p>
       </div>
 
       {/* Players */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className={styles.playersGrid}>
         {([1, 2] as const).map((s) => {
           const key = s === 1 ? game.player1 : game.player2;
           const isYou = seat === s;
           return (
-            <div key={s} className={`rounded-xl border p-4 ${isYou ? "border-indigo-500 bg-indigo-500/10" : "border-gray-700 bg-gray-800/40"}`}>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Player {s}</p>
-              <p className="font-mono text-sm mt-1">{shortKey(key)}</p>
-              {isYou && <span className="text-xs text-indigo-400 font-semibold">You</span>}
+            <div key={s} className={`${styles.playerBadge} ${isYou ? styles.isYou : ''}`}>
+              <span>P{s}</span>
+              <span style={{ fontFamily: 'monospace' }}>{shortKey(key)}</span>
+              {isYou && <span style={{ fontWeight: 800 }}>YOU</span>}
             </div>
           );
         })}
       </div>
 
-      {/* Actions */}
-      <div className="space-y-3">
-        {/* Seat picker — shown when arriving without a seat param */}
-        {seat === 0 && statusKey === "WaitingForPlayers" && (
-          <div className="grid grid-cols-2 gap-3">
-            {([1, 2] as const).map((s) => {
-              const taken = s === 1 ? !!game.player1 : !!game.player2;
-              return (
-                <button
-                  key={s}
-                  onClick={() => !taken && joinAsSeat(s)}
-                  disabled={taken}
-                  className={`py-3 rounded-xl font-semibold transition ${
-                    taken
-                      ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                      : "bg-indigo-600 hover:bg-indigo-500"
-                  }`}
-                >
-                  {taken ? `Seat ${s} taken` : `Join as Player ${s}`}
-                </button>
-              );
-            })}
+      {/* Card choice UI */}
+      {isPlayer && (statusKey === "Active" || statusKey === "Committing") && !myCommitted && (
+        <>
+          <div
+            className={styles.cardsContainer}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <ChoiceCard
+              choice="Split"
+              selected={pendingChoice === "Split"}
+              disabled={false}
+              onSelect={() => setPendingChoice(pendingChoice === "Split" ? null : "Split")}
+              dragX={dragX < 0 ? Math.abs(dragX) : 0}
+            />
+            <ChoiceCard
+              choice="Steal"
+              selected={pendingChoice === "Steal"}
+              disabled={false}
+              onSelect={() => setPendingChoice(pendingChoice === "Steal" ? null : "Steal")}
+              dragX={dragX > 0 ? dragX : 0}
+            />
           </div>
-        )}
 
-        {/* Already has a seat — show join button if not yet joined */}
-        {canJoin && (
-          <button onClick={() => joinAsSeat(seat as 1 | 2)} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold transition">
-            Join Game
-          </button>
-        )}
+          <p className={styles.infoText} style={{ minHeight: '20px' }}>
+            {pendingChoice ? `${pendingChoice} Selected` : '← swipe left or right →'}
+          </p>
 
-        {/* Slider — visible during countdown AND after, until committed */}
-        {isPlayer && (statusKey === "Active" || statusKey === "Committing") && !myCommitted && (
-          <div className="space-y-4 p-4 border border-gray-700 rounded-xl bg-gray-900">
-            {/* Countdown inside the card */}
-            {!chatOver && chatEndsAt > 0 && (
-              <div className="text-center pb-2">
-                <p className="text-4xl font-mono font-bold tabular-nums">{secondsLeft}s</p>
-                <p className="text-xs text-gray-500 mt-1">Choose before time runs out</p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm font-bold px-1">
-                <span className={`transition-colors ${pendingChoice === "Split" ? "text-emerald-400" : "text-gray-500"}`}>🤝 Split</span>
-                <span className={`transition-colors ${pendingChoice === "Steal" ? "text-red-400" : "text-gray-500"}`}>🐍 Steal</span>
-              </div>
-              <div className="relative flex items-center h-12">
-                <div className={`absolute inset-x-0 h-3 rounded-full transition-colors duration-300 ${trackColor}`} />
-                <input
-                  type="range"
-                  min={0}
-                  max={2}
-                  step={1}
-                  value={sliderValue}
-                  onChange={(e) => setSliderValue(Number(e.target.value))}
-                  className="choice-slider relative w-full appearance-none bg-transparent cursor-pointer"
-                  style={{ ["--thumb-color" as string]: thumbColor }}
+          {/* Countdown */}
+          {!chatOver && chatEndsAt > 0 && (
+            <div className={styles.timerContainer}>
+              <svg className={styles.timerRing} viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" className={styles.timerCircleBg} />
+                <circle 
+                  cx="50" cy="50" r="40" 
+                  className={`${styles.timerCircleFg} ${isDanger ? styles.danger : ''}`}
+                  strokeDasharray="251"
+                  strokeDashoffset={timerDashOffset}
                 />
-              </div>
-              {pendingChoice ? (
-                <p className={`text-center text-sm font-bold ${pendingChoice === "Split" ? "text-emerald-400" : "text-red-400"}`}>
-                  {pendingChoice === "Split" ? "🤝 You chose Split" : "🐍 You chose Steal"}
-                </p>
-              ) : (
-                <p className="text-center text-sm text-gray-500">Slide left to Split · right to Steal</p>
-              )}
+              </svg>
+              <span className={styles.timerText} style={{ color: isDanger ? '#ef4444' : '#ffffff' }}>
+                {secondsLeft}s
+              </span>
             </div>
-
-            {chatOver ? (
-              <button
-                onClick={commitChoice}
-                disabled={!pendingChoice}
-                className={`w-full py-3 rounded-xl font-semibold transition disabled:opacity-40 ${
-                  pendingChoice === "Split" ? "bg-emerald-600 hover:bg-emerald-500" :
-                  pendingChoice === "Steal" ? "bg-red-600 hover:bg-red-500" : "bg-gray-700"
-                }`}
-              >
-                {pendingChoice ? `Lock in ${pendingChoice}` : "Move slider to choose"}
-              </button>
-            ) : (
-              <button disabled className="w-full py-3 rounded-xl font-semibold bg-gray-700 opacity-40 cursor-not-allowed">
-                Locks in at 0s
-              </button>
-            )}
-          </div>
-        )}
-
-        {myCommitted && !myRevealed && statusKey !== "Revealing" && (
-          <p className="text-emerald-400 text-sm text-center">✓ Choice committed — waiting for opponent…</p>
-        )}
-
-        {/* Reveal */}
-        {isPlayer && statusKey === "Revealing" && !myRevealed && (
-          <button onClick={revealChoice} className="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold transition">
-            Reveal My Choice
-          </button>
-        )}
-
-        {myRevealed && !bothRevealed && (
-          <p className="text-purple-400 text-sm text-center">✓ Revealed — waiting for opponent…</p>
-        )}
-
-        {bothRevealed && statusKey === "Revealing" && (
-          <p className="text-yellow-400 text-sm text-center animate-pulse">Resolving game…</p>
-        )}
-      </div>
-
-      {/* Result */}
-      {result && (
-        <div className={`text-center p-8 rounded-2xl border space-y-2 ${result.color}`}>
-          <div className="text-5xl">{result.emoji}</div>
-          <p className="text-2xl font-bold">{result.title}</p>
-          <p className="text-gray-300">{result.text}</p>
-          {result.you && (
-            <p className={`text-lg font-bold mt-2 ${result.you === "+0 SOL" ? "text-red-400" : "text-emerald-400"}`}>
-              You: {result.you}
-            </p>
           )}
+
+          {/* Lock in button */}
+          {chatOver ? (
+            <button
+              onClick={commitChoice}
+              disabled={!pendingChoice}
+              className={`${styles.ctaButton} ${pendingChoice === "Split" ? styles.btnSplit : pendingChoice === "Steal" ? styles.btnSteal : ''}`}
+            >
+              {pendingChoice ? `Lock in ${pendingChoice}` : "Choose a card"}
+            </button>
+          ) : (
+            <button disabled className={styles.ctaButton}>
+              Wait for timer
+            </button>
+          )}
+        </>
+      )}
+
+      {/* Waiting state */}
+      {myCommitted && !myRevealed && statusKey !== "Revealing" && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <p className={styles.statusMessage} style={{ color: '#10b981' }}>✓ Choice locked in. Waiting for opponent...</p>
         </div>
       )}
 
+      {/* Reveal action */}
+      {isPlayer && statusKey === "Revealing" && !myRevealed && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <button onClick={revealChoice} className={styles.actionButton}>
+            Reveal My Choice
+          </button>
+        </div>
+      )}
+
+      {/* Both revealed waiting */}
+      {bothRevealed && statusKey === "Revealing" && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <p className={styles.statusMessage} style={{ color: '#fcd34d' }}>Resolving game...</p>
+        </div>
+      )}
+
+      {/* Join game UI */}
+      {seat === 0 && statusKey === "WaitingForPlayers" && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem' }}>
+          {([1, 2] as const).map((s) => {
+            const taken = s === 1 ? !!game.player1 : !!game.player2;
+            return (
+              <button
+                key={s}
+                onClick={() => !taken && joinAsSeat(s)}
+                disabled={taken}
+                className={styles.actionButton}
+                style={taken ? { backgroundColor: '#333', color: '#888' } : {}}
+              >
+                {taken ? `Seat ${s} taken` : `Join as Player ${s}`}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {canJoin && (
+        <button onClick={() => joinAsSeat(seat as 1 | 2)} className={styles.actionButton} style={{ marginTop: 'auto' }}>
+          Join Game
+        </button>
+      )}
+
+      {/* Status Messages */}
       {txStatus && (
-        <p className="text-sm text-gray-400 border border-gray-700 rounded-lg px-4 py-2">{txStatus}</p>
+        <div className={styles.statusMessage} style={{ marginTop: 'auto' }}>
+          {txStatus}
+        </div>
+      )}
+
+      {/* Result Overlay */}
+      {result && (
+        <div className={styles.overlay}>
+          {result.isWin && <Confetti />}
+          <div className={styles.emojiLarge}>{result.emoji}</div>
+          <h2 className={styles.resultTitle}>{result.title}</h2>
+          <p className={styles.resultText}>{result.text}</p>
+          {result.you && (
+            <div className={`${styles.winAmount} ${result.isWin ? styles.positive : styles.zero}`}>
+              You: {result.you}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -364,7 +486,7 @@ function GamePageInner() {
 
 export default function GamePage() {
   return (
-    <Suspense fallback={<p className="text-gray-400">Loading…</p>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0a0a', color: '#a1a1aa' }}>Loading…</div>}>
       <GamePageInner />
     </Suspense>
   );

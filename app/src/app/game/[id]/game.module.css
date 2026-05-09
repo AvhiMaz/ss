@@ -1,0 +1,350 @@
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #0a0a0a;
+  color: #ededed;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-geist-sans), sans-serif;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.gameNumber {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.potAmount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0.5rem 0;
+  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.potLabel {
+  font-size: 0.875rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.playersGrid {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.playerBadge {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.playerBadge.isYou {
+  background-color: rgba(79, 70, 229, 0.15);
+  border-color: #4f46e5;
+  color: #a5b4fc;
+}
+
+.cardsContainer {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  position: relative;
+  flex: 1;
+  align-items: center;
+  min-height: 300px;
+}
+
+.card {
+  width: 150px;
+  height: 220px;
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              opacity 0.3s ease, 
+              box-shadow 0.3s ease;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.cardSplit {
+  background-color: #059669;
+}
+
+.cardSteal {
+  background-color: #dc2626;
+}
+
+.cardRank {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: serif;
+}
+
+.cardRank.bottom {
+  transform: rotate(180deg);
+  text-align: right;
+}
+
+.cardLabel {
+  font-size: 1.75rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.cardSelected {
+  transform: scale(1.1) translateY(-10px) !important;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2), 0 20px 40px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.cardSelected.cardSplit {
+  box-shadow: 0 0 0 4px #6ee7b7, 0 0 30px rgba(16, 185, 129, 0.5);
+}
+
+.cardSelected.cardSteal {
+  box-shadow: 0 0 0 4px #fca5a5, 0 0 30px rgba(239, 68, 68, 0.5);
+}
+
+.cardUnselected {
+  opacity: 0.4;
+  transform: scale(0.9) !important;
+}
+
+.timerContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2rem 0;
+  position: relative;
+}
+
+.timerRing {
+  width: 80px;
+  height: 80px;
+  transform: rotate(-90deg);
+}
+
+.timerCircleBg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 4;
+}
+
+.timerCircleFg {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+}
+
+.timerCircleFg.danger {
+  stroke: #ef4444;
+}
+
+.timerText {
+  position: absolute;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ctaButton {
+  width: 100%;
+  padding: 1.25rem;
+  border-radius: 12px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  color: white;
+  background-color: #333;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  margin-top: auto;
+}
+
+.ctaButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: scale(1) !important;
+}
+
+.ctaButton:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.ctaButton.btnSplit {
+  background-color: #059669;
+}
+
+.ctaButton.btnSplit:hover {
+  background-color: #047857;
+}
+
+.ctaButton.btnSteal {
+  background-color: #dc2626;
+}
+
+.ctaButton.btnSteal:hover {
+  background-color: #b91c1c;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.emojiLarge {
+  font-size: 6rem;
+  margin-bottom: 1rem;
+  animation: bounceIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.resultTitle {
+  font-size: 2.5rem;
+  font-weight: 900;
+  margin: 0 0 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.resultText {
+  font-size: 1.25rem;
+  color: #a1a1aa;
+  margin-bottom: 2rem;
+}
+
+.winAmount {
+  font-size: 2rem;
+  font-weight: 800;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.winAmount.positive {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.winAmount.zero {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.infoText {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.actionButton {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  color: white;
+  background-color: #4f46e5;
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin-bottom: 0.5rem;
+}
+
+.actionButton:active {
+  transform: scale(0.96);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.statusMessage {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #a1a1aa;
+  font-size: 1.25rem;
+  background-color: #0a0a0a;
+}

@@ -1,0 +1,190 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: var(--font-geist-sans), sans-serif;
+  color: #ededed;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 2rem;
+  color: #ffffff;
+}
+
+.panel {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.panelTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem;
+  color: #ffffff;
+}
+
+.inputGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
+  font-weight: 600;
+}
+
+.input {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: #6366f1;
+}
+
+.button {
+  width: 100%;
+  background-color: #4f46e5;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.button:hover {
+  background-color: #4338ca;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.resolveItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.resolveText {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.875rem;
+}
+
+.resolveButton {
+  background-color: #9333ea;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.resolveButton:hover {
+  background-color: #7e22ce;
+}
+
+.statusMessage {
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+}
+
+.linksPanel {
+  background-color: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.linksTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #a5b4fc;
+  margin: 0 0 1rem;
+}
+
+.linkItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.linkItem:last-child {
+  margin-bottom: 0;
+}
+
+.linkPlayer {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  width: 4rem;
+}
+
+.linkCode {
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.75rem;
+  color: #e0e7ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.copyButton {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #ffffff;
+  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copyButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}

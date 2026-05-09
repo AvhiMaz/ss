@@ -2,6 +2,8 @@
 
 import { useAllGames } from "@/hooks/useGame";
 import { GameCard } from "@/components/GameCard";
+import styles from "./lobby.module.css";
+import Link from "next/link";
 
 export default function LobbyPage() {
   const { games, loading } = useAllGames();
@@ -12,44 +14,46 @@ export default function LobbyPage() {
   });
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Game Lobby</h1>
-        <p className="text-gray-400 mt-1">Join a game and prove your trust — or test your nerve.</p>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Game Lobby</h1>
+        <p className={styles.subtitle}>Join a game and prove your trust — or test your nerve.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 p-6 rounded-2xl border border-gray-800 bg-gray-900/40">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500">How it works</h2>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div className="space-y-1">
-            <div className="text-2xl">🤝</div>
-            <p className="font-semibold">Both Split</p>
-            <p className="text-sm text-gray-400">Each player gets half the pot</p>
+      <div className={styles.howItWorks}>
+        <h2 className={styles.howItWorksTitle}>How it works</h2>
+        <div className={styles.howItWorksGrid}>
+          <div className={styles.howItWorksItem}>
+            <div className={styles.howItWorksEmoji}>🤝</div>
+            <p className={styles.howItWorksLabel}>Both Split</p>
+            <p className={styles.howItWorksDesc}>Each player gets half the pot</p>
           </div>
-          <div className="space-y-1">
-            <div className="text-2xl">🐍</div>
-            <p className="font-semibold">One Steals</p>
-            <p className="text-sm text-gray-400">Stealer takes everything, other gets nothing</p>
+          <div className={styles.howItWorksItem}>
+            <div className={styles.howItWorksEmoji}>🐍</div>
+            <p className={styles.howItWorksLabel}>One Steals</p>
+            <p className={styles.howItWorksDesc}>Stealer takes everything, other gets nothing</p>
           </div>
-          <div className="space-y-1">
-            <div className="text-2xl">🏦</div>
-            <p className="font-semibold">Both Steal</p>
-            <p className="text-sm text-gray-400">No one wins — house keeps the pot</p>
+          <div className={styles.howItWorksItem}>
+            <div className={styles.howItWorksEmoji}>🏦</div>
+            <p className={styles.howItWorksLabel}>Both Steal</p>
+            <p className={styles.howItWorksDesc}>No one wins — house keeps the pot</p>
           </div>
         </div>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">Active Games</h2>
+        <h2 className={styles.sectionTitle}>Active Games</h2>
         {loading ? (
-          <p className="text-gray-500">Loading games…</p>
+          <p style={{ color: '#71717a' }}>Loading games…</p>
         ) : active.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <p>No active games right now.</p>
-            <p className="text-sm mt-1">Ask the admin to create one, or head to <a href="/admin" className="text-indigo-400 underline">Admin</a>.</p>
+          <div className={styles.emptyState}>
+            <p style={{ margin: '0 0 0.5rem' }}>No active games right now.</p>
+            <p style={{ fontSize: '0.875rem', margin: 0 }}>
+              Ask the admin to create one, or head to <Link href="/admin" className={styles.adminLink}>Admin</Link>.
+            </p>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className={styles.gamesGrid}>
             {active.map((g) => (
               <GameCard key={g.pubkey.toBase58()} pubkey={g.pubkey} account={g.account} />
             ))}

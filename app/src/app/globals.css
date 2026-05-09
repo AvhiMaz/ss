@@ -24,26 +24,3 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-
-/* Choice slider thumb */
-input[type="range"].choice-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  border: 2px solid white;
-  background: var(--thumb-color, #6b7280);
-  cursor: grab;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  transition: background 0.2s;
-}
-input[type="range"].choice-slider::-moz-range-thumb {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  border: 2px solid white;
-  background: var(--thumb-color, #6b7280);
-  cursor: grab;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  transition: background 0.2s;
-}
