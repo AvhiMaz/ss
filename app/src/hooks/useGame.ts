@@ -86,7 +86,7 @@ export function useAllGames() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const programId = new PublicKey("DiuZ2ZjMdhqr7zA6zZuQoxR8bUoJf9kck1RG3KtwB9ex");
+      const programId = new PublicKey("6sTBcie75owJJor9QixdGKuiW6cDXd6KV92Rt7sHm7G5");
       // Filter by account discriminator for Game accounts
       const discriminator = Buffer.from([27, 90, 166, 125, 74, 100, 121, 18]);
       const accounts = await connection.getProgramAccounts(programId, {

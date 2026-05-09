@@ -9,7 +9,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("DiuZ2ZjMdhqr7zA6zZuQoxR8bUoJf9kck1RG3KtwB9ex");
+declare_id!("6sTBcie75owJJor9QixdGKuiW6cDXd6KV92Rt7sHm7G5");
 
 #[program]
 pub mod split_or_steal {

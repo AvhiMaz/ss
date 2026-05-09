@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 
-export const PROGRAM_ID = new PublicKey("DiuZ2ZjMdhqr7zA6zZuQoxR8bUoJf9kck1RG3KtwB9ex");
+export const PROGRAM_ID = new PublicKey("6sTBcie75owJJor9QixdGKuiW6cDXd6KV92Rt7sHm7G5");
 export const GAME_SEED = Buffer.from("game");
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 export const CHAT_DURATION_MS = 60_000;
