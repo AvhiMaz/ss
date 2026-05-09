@@ -30,11 +30,9 @@ pub fn handler(ctx: Context<JoinGame>, _game_id: u64) -> Result<()> {
     } else if game.player2.is_none() {
         require!(game.player1 != Some(player_key), SplitOrStealError::GameFull);
         game.player2 = Some(player_key);
-        // Both players joined — start chat timer
-        let now = Clock::get()?.unix_timestamp;
-        game.chat_ends_at = now + CHAT_DURATION_SECS;
+        game.chat_ends_at = 0;
         game.status = GameStatus::Active;
-        msg!("Player 2 joined: {}. Chat ends at {}", player_key, game.chat_ends_at);
+        msg!("Player 2 joined: {}", player_key);
     } else {
         return err!(SplitOrStealError::GameFull);
     }

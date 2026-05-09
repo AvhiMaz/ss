@@ -28,9 +28,6 @@ pub fn handler(ctx: Context<CommitChoice>, _game_id: u64, commitment: [u8; 32]) 
         SplitOrStealError::GameNotWaiting
     );
 
-    let now = Clock::get()?.unix_timestamp;
-    require!(now >= game.chat_ends_at, SplitOrStealError::ChatNotOver);
-
     if Some(player_key) == game.player1 {
         require!(game.player1_commitment.is_none(), SplitOrStealError::AlreadyCommitted);
         game.player1_commitment = Some(commitment);

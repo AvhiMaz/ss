@@ -5,7 +5,6 @@ import { deriveGamePDA } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
-    // commitment is the SHA256 hash computed client-side — backend never sees the choice
     const { gameId, seat, commitment } = await req.json();
     const admin = getAdminKeypair();
     const player = derivePlayerKeypair(gameId, seat);
